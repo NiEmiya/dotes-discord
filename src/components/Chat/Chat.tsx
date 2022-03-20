@@ -20,15 +20,20 @@ export default function Chat() {
   const channelName = useSelector(selectChannelName);
   const [input, setInput] = React.useState("");
   const [messages, setMessages] = React.useState<any[]>([]);
+  const messagesEndRef = React.useRef<HTMLHeadingElement>(null);
+  const scrollToBottom = () => {
+    messagesEndRef.current!.scrollIntoView({ behavior: "smooth" });
+  };
 
   React.useEffect(() => {
     if (channelId) {
       db.collection("channels")
         .doc(channelId)
         .collection("messages")
-        .orderBy("timestamp", "desc")
+        .orderBy("timestamp", "asc")
         .onSnapshot((snapshot) => {
           setMessages(snapshot.docs.map((doc) => doc.data()));
+          scrollToBottom();
         });
     }
   }, [channelId]);
@@ -53,6 +58,7 @@ export default function Chat() {
             user={message.user}
           />
         ))}
+        <div className="refdiv" ref={messagesEndRef}></div>
       </div>
       <div className="chat__input">
         <AddCircle fontSize="large" />
