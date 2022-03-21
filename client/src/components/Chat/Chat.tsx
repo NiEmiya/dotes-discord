@@ -3,6 +3,8 @@ import {
   CardGiftcard,
   EmojiEmotions,
   Gif,
+  Mic,
+  VoiceChat,
 } from "@mui/icons-material";
 import React from "react";
 import { useSelector } from "react-redux";
@@ -13,6 +15,7 @@ import "./Chat.css";
 import ChatHeader from "./ChatHeader";
 import Message from "./Message";
 import firebase from "firebase";
+import Peer from "peerjs";
 
 export default function Chat() {
   const user = useSelector(selectUser);
@@ -23,6 +26,40 @@ export default function Chat() {
   const messagesEndRef = React.useRef<HTMLHeadingElement>(null);
   const scrollToBottom = () => {
     messagesEndRef.current!.scrollIntoView({ behavior: "smooth" });
+  };
+  const [voice, setVoice] = React.useState(false);
+  const handleJoinVoice = () => {
+    const peer = new Peer("someid", {
+      host: "localhost",
+      port: 9000,
+      path: "/server",
+    });
+    if (voice) {
+      peer.destroy();
+      setVoice(false);
+      return;
+    }
+    setVoice(true);
+    peer.on("connection", (conn) => {
+      console.log("incoming peer connection!");
+      conn.on("data", (data) => {
+        console.log(`received: ${data}`);
+      });
+      conn.on("open", () => {
+        conn.send("hello!");
+      });
+    });
+    peer.on("call", (call) => {
+      navigator.mediaDevices
+        .getUserMedia({ video: false, audio: true })
+        .then((stream) => {
+          call.answer(stream); // Answer the call with an A/V stream.
+          call.on("stream", (remoteStream) => {});
+        })
+        .catch((err) => {
+          console.error("Failed to get local stream", err);
+        });
+    });
   };
 
   React.useEffect(() => {
@@ -80,6 +117,11 @@ export default function Chat() {
           </button>
         </form>
         <div className="chat__inputIcons">
+          <Mic
+            fontSize="large"
+            onClick={handleJoinVoice}
+            color={voice ? "success" : "error"}
+          />
           <CardGiftcard fontSize="large" />
           <Gif fontSize="large" />
           <EmojiEmotions fontSize="large" />
