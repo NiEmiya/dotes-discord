@@ -47,7 +47,6 @@ function Voice() {
       })
       .then((stream) => {
         addAudioStream(myAudio, stream);
-
         peer.on("call", (call: any) => {
           call.answer(stream);
           const audio = document.createElement("audio");
